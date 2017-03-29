@@ -46,13 +46,13 @@ var formatDeltaTime = function(deltaT) {
 	var deltaInfo = '';
 	if (deltaT < 0) {
 	} else if (deltaT < 1) {
-		deltaInfo = '<1 min';
+		deltaInfo = '&lt;1 min';
 	} else if (deltaT < 60) {
 		deltaInfo = Math.round(deltaT) + ' min';
 	} else if (deltaT < 2*60) {
 		var h = Math.floor(deltaT/60);
 		deltaInfo = h + 'h ';
-		deltaInfo += (deltaT - 60 * h) + ' min';
+		deltaInfo += Math.round(deltaT - 60 * h) + ' min';
 	} else if (deltaT < 48*60) {
 		deltaInfo = '~' + Math.round(deltaT/60) + 'h';
 	} else {
