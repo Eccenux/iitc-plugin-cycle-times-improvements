@@ -2,7 +2,7 @@
 // @id             iitc-plugin-cycle-times-improvements@jonatkins
 // @name           IITC plugin: Show cycle/checkpoint times improved
 // @category       Info
-// @version        0.1.3
+// @version        0.1.4
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @description    Show the times used for the septicycle and checkpoints. Additionaly shows delta time info.
 // @include        https://*.ingress.com/intel*
@@ -117,7 +117,7 @@ window.plugin.scoreCycleTimes.update = function() {
 
 	$('#score_cycle_times_display').html(html);
 
-	var closestDeltaT = checkpointEnd - now;	// that should be closest
+	var closestDeltaT = (checkpointEnd - now) / 1000 / 60;	// that should be closest
 	setTimeout ( window.plugin.scoreCycleTimes.update, updateInterval(closestDeltaT));
 };
 
