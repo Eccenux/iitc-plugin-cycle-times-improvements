@@ -1,12 +1,10 @@
 ﻿// ==UserScript==
-// @id             iitc-plugin-score-cycle-times@jonatkins
-// @name           IITC plugin: Show scoreboard cycle/checkpoint times
+// @id             iitc-plugin-cycle-times-improvements@jonatkins
+// @name           IITC plugin: Show cycle/checkpoint times improved
 // @category       Info
-// @version        0.1.0.20170108.21732
+// @version        0.1.1
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @updateURL      https://static.iitc.me/build/release/plugins/score-cycle-times.meta.js
-// @downloadURL    https://static.iitc.me/build/release/plugins/score-cycle-times.user.js
-// @description    [iitc-2017-01-08-021732] Show the times used for the septicycle and checkpoints for regional scoreboards.
+// @description    Show the times used for the septicycle and checkpoints. Additionaly shows delta time info.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -16,24 +14,13 @@
 // @match          https://*.ingress.com/mission/*
 // @match          http://*.ingress.com/mission/*
 // @grant          none
+// @updateURL      https://github.com/Eccenux/iitc-plugin-cycle-times-improvements/raw/master/cycle-times-improvements.meta.js
+// @downloadURL    https://github.com/Eccenux/iitc-plugin-cycle-times-improvements/raw/master/cycle-times-improvements.user.js
 // ==/UserScript==
-
 
 function wrapper(plugin_info) {
 // ensure plugin framework is there, even if iitc is not yet loaded
 if(typeof window.plugin !== 'function') window.plugin = function() {};
-
-//PLUGIN AUTHORS: writing a plugin outside of the IITC build environment? if so, delete these lines!!
-//(leaving them in place might break the 'About IITC' page or break update checks)
-plugin_info.buildName = 'iitc';
-plugin_info.dateTimeVersion = '20170108.21732';
-plugin_info.pluginId = 'score-cycle-times';
-//END PLUGIN AUTHORS NOTE
-
-
-
-// PLUGIN START ////////////////////////////////////////////////////////
-
 
 // use own namespace for plugin
 window.plugin.scoreCycleTimes = function() {};
@@ -52,7 +39,27 @@ window.plugin.scoreCycleTimes.setup  = function() {
   window.plugin.scoreCycleTimes.update();
 };
 
-
+/**
+	Get time left information.
+*/
+var formatDeltaTime = function(deltaT) {
+	var deltaInfo = '';
+	if (deltaT < 0) {
+	} else if (deltaT < 1) {
+		deltaInfo = '<1 min';
+	} else if (deltaT < 60) {
+		deltaInfo = Math.round(deltaT) + ' min';
+	} else if (deltaT < 2*60) {
+		var h = Math.floor(deltaT/60);
+		deltaInfo = h + 'h ';
+		deltaInfo += (deltaT - 60 * h) + ' min';
+	} else if (deltaT < 48*60) {
+		deltaInfo = '~' + Math.round(deltaT/60) + 'h';
+	} else {
+		deltaInfo = '~' + Math.round(deltaT/60/24) + ' days';
+	}
+	return deltaInfo;
+}
 
 window.plugin.scoreCycleTimes.update = function() {
 
@@ -72,22 +79,28 @@ window.plugin.scoreCycleTimes.update = function() {
 
 
   var formatRow = function(label,time) {
-    var timeStr = unixTimeToString(time,true);
-    timeStr = timeStr.replace(/:00$/,''); //FIXME: doesn't remove seconds from AM/PM formatted dates
+	var deltaT = (time-now) / 1000 / 60;	// in minutes
+	var deltaInfo = formatDeltaTime(deltaT);
+	if (deltaInfo.length) {
+		deltaInfo = ' ('+deltaInfo+')'
+	}
+	
+	var timeStr = unixTimeToString(time,true);
+	timeStr = timeStr.replace(/:00$/,''); //FIXME: doesn't remove seconds from AM/PM formatted dates
 
-    return '<tr><td>'+label+'</td><td>'+timeStr+'</td></tr>';
+	return '<tr><td>'+label+'</td><td>'+timeStr+deltaInfo+'</td></tr>';
   };
 
   var html = '<table>'
-           + formatRow('Cycle start', cycleStart)
-           + formatRow('Previous checkpoint', checkpointStart)
-           + formatRow('Next checkpoint', checkpointEnd)
-           + formatRow('Cycle end', cycleEnd)
-           + '</table>';
+		   + formatRow('Cycle s.', cycleStart)
+		   + formatRow('Prev CP', checkpointStart)
+		   + formatRow('Next CP', checkpointEnd)
+		   + formatRow('Cycle e.', cycleEnd)
+		   + '</table>';
 
   $('#score_cycle_times_display').html(html);
 
-  setTimeout ( window.plugin.scoreCycleTimes.update, checkpointEnd-now);
+  setTimeout ( window.plugin.scoreCycleTimes.update, 10*1000);
 };
 
 
@@ -111,5 +124,3 @@ var info = {};
 if (typeof GM_info !== 'undefined' && GM_info && GM_info.script) info.script = { version: GM_info.script.version, name: GM_info.script.name, description: GM_info.script.description };
 script.appendChild(document.createTextNode('('+ wrapper +')('+JSON.stringify(info)+');'));
 (document.body || document.head || document.documentElement).appendChild(script);
-
-
