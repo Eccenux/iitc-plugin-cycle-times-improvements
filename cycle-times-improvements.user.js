@@ -61,46 +61,63 @@ var formatDeltaTime = function(deltaT) {
 	return deltaInfo;
 }
 
+/**
+	Get reasonable update interval.
+*/
+var updateInterval = function(deltaT) {
+	var interval;
+	if (deltaT < 60) {
+		interval = 10 * 1000;	// 10 seconds by default
+	} else if (deltaT < 2.1*60) {
+		interval = 20 * 1000;
+	} else if (deltaT < 48*60) {
+		interval = 10 * 60 * 1000;
+	} else {
+		interval = 60 * 60 * 1000;
+	}
+	return interval;
+}
+
 window.plugin.scoreCycleTimes.update = function() {
 
-  // checkpoint and cycle start times are based on a simple modulus of the timestamp
-  // no special epoch (other than the unix timestamp/javascript's 1970-01-01 00:00 UTC) is required
+	// checkpoint and cycle start times are based on a simple modulus of the timestamp
+	// no special epoch (other than the unix timestamp/javascript's 1970-01-01 00:00 UTC) is required
 
-  // when regional scoreboards were introduced, the first cycle would have started at 2014-01-15 10:00 UTC - but it was
-  // a few checkpoints in when scores were first added
+	// when regional scoreboards were introduced, the first cycle would have started at 2014-01-15 10:00 UTC - but it was
+	// a few checkpoints in when scores were first added
 
-  var now = new Date().getTime();
+	var now = new Date().getTime();
 
-  var cycleStart = Math.floor(now / (window.plugin.scoreCycleTimes.CYCLE*1000)) * (window.plugin.scoreCycleTimes.CYCLE*1000);
-  var cycleEnd = cycleStart + window.plugin.scoreCycleTimes.CYCLE*1000;
+	var cycleStart = Math.floor(now / (window.plugin.scoreCycleTimes.CYCLE*1000)) * (window.plugin.scoreCycleTimes.CYCLE*1000);
+	var cycleEnd = cycleStart + window.plugin.scoreCycleTimes.CYCLE*1000;
 
-  var checkpointStart = Math.floor(now / (window.plugin.scoreCycleTimes.CHECKPOINT*1000)) * (window.plugin.scoreCycleTimes.CHECKPOINT*1000);
-  var checkpointEnd = checkpointStart + window.plugin.scoreCycleTimes.CHECKPOINT*1000;
+	var checkpointStart = Math.floor(now / (window.plugin.scoreCycleTimes.CHECKPOINT*1000)) * (window.plugin.scoreCycleTimes.CHECKPOINT*1000);
+	var checkpointEnd = checkpointStart + window.plugin.scoreCycleTimes.CHECKPOINT*1000;
 
 
-  var formatRow = function(label,time) {
-	var deltaT = (time-now) / 1000 / 60;	// in minutes
-	var deltaInfo = formatDeltaTime(deltaT);
-	if (deltaInfo.length) {
-		deltaInfo = ' ('+deltaInfo+')'
-	}
-	
-	var timeStr = unixTimeToString(time,true);
-	timeStr = timeStr.replace(/:00$/,''); //FIXME: doesn't remove seconds from AM/PM formatted dates
+	var formatRow = function(label,time) {
+		var deltaT = (time-now) / 1000 / 60;	// in minutes
+		var deltaInfo = formatDeltaTime(deltaT);
+		if (deltaInfo.length) {
+			deltaInfo = ' ('+deltaInfo+')'
+		}
+		
+		var timeStr = unixTimeToString(time,true);
+		timeStr = timeStr.replace(/:00$/,''); //FIXME: doesn't remove seconds from AM/PM formatted dates
 
-	return '<tr><td>'+label+'</td><td>'+timeStr+deltaInfo+'</td></tr>';
-  };
+		return '<tr><td>'+label+'</td><td>'+timeStr+deltaInfo+'</td></tr>';
+	};
 
-  var html = '<table>'
+	var html = '<table>'
 		   + formatRow('Cycle s.', cycleStart)
 		   + formatRow('Prev CP', checkpointStart)
 		   + formatRow('Next CP', checkpointEnd)
 		   + formatRow('Cycle e.', cycleEnd)
 		   + '</table>';
 
-  $('#score_cycle_times_display').html(html);
+	$('#score_cycle_times_display').html(html);
 
-  setTimeout ( window.plugin.scoreCycleTimes.update, 10*1000);
+	setTimeout ( window.plugin.scoreCycleTimes.update, updateInterval(closestDeltaT));
 };
 
 
