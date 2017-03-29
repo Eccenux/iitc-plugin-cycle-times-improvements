@@ -2,7 +2,7 @@
 // @id             iitc-plugin-cycle-times-improvements@jonatkins
 // @name           IITC plugin: Show cycle/checkpoint times improved
 // @category       Info
-// @version        0.1.2
+// @version        0.1.3
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
 // @description    Show the times used for the septicycle and checkpoints. Additionaly shows delta time info.
 // @include        https://*.ingress.com/intel*
