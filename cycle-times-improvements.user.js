@@ -2,9 +2,9 @@
 // @id             iitc-plugin-cycle-times-improvements@jonatkins
 // @name           IITC plugin: Show cycle/checkpoint times improved
 // @category       Info
-// @version        0.1.4
+// @version        0.2.0
 // @namespace      https://github.com/jonatkins/ingress-intel-total-conversion
-// @description    Show the times used for the septicycle and checkpoints. Additionaly shows delta time info.
+// @description    [0.2.0] Show the times used for the septicycle and checkpoints. Additionaly shows delta time info.
 // @include        https://*.ingress.com/intel*
 // @include        http://*.ingress.com/intel*
 // @match          https://*.ingress.com/intel*
@@ -59,7 +59,7 @@ var formatDeltaTime = function(deltaT) {
 		deltaInfo = '~' + Math.round(deltaT/60/24) + ' days';
 	}
 	return deltaInfo;
-}
+};
 
 /**
 	Get reasonable update interval.
@@ -76,8 +76,28 @@ var updateInterval = function(deltaT) {
 		interval = 60 * 60 * 1000;
 	}
 	return interval;
-}
+};
 
+/**
+ * Format time row.
+ */
+window.plugin.scoreCycleTimes.formatRow = function (now, label, time, className) {
+	var deltaT = (time-now) / 1000 / 60;	// in minutes
+	var deltaInfo = formatDeltaTime(deltaT);
+	if (deltaInfo.length) {
+		deltaInfo = ' ('+deltaInfo+')';
+	}
+
+	var timeStr = unixTimeToString(time,true);
+	timeStr = timeStr.replace(/:00$/,''); //FIXME: doesn't remove seconds from AM/PM formatted dates
+
+	var base = (!className) ? '<tr>' : '<tr class="'+className+'">';
+	return base + '<td>'+label+'</td><td class="val">'+timeStr+deltaInfo+'</td></tr>';
+};
+
+/**
+ * Update CP and cycle times.
+ */
 window.plugin.scoreCycleTimes.update = function() {
 
 	// checkpoint and cycle start times are based on a simple modulus of the timestamp
@@ -91,37 +111,49 @@ window.plugin.scoreCycleTimes.update = function() {
 	var cycleStart = Math.floor(now / (window.plugin.scoreCycleTimes.CYCLE*1000)) * (window.plugin.scoreCycleTimes.CYCLE*1000);
 	var cycleEnd = cycleStart + window.plugin.scoreCycleTimes.CYCLE*1000;
 
-	var checkpointStart = Math.floor(now / (window.plugin.scoreCycleTimes.CHECKPOINT*1000)) * (window.plugin.scoreCycleTimes.CHECKPOINT*1000);
-	var checkpointEnd = checkpointStart + window.plugin.scoreCycleTimes.CHECKPOINT*1000;
-
-
-	var formatRow = function(label,time) {
-		var deltaT = (time-now) / 1000 / 60;	// in minutes
-		var deltaInfo = formatDeltaTime(deltaT);
-		if (deltaInfo.length) {
-			deltaInfo = ' ('+deltaInfo+')'
-		}
-		
-		var timeStr = unixTimeToString(time,true);
-		timeStr = timeStr.replace(/:00$/,''); //FIXME: doesn't remove seconds from AM/PM formatted dates
-
-		return '<tr><td>'+label+'</td><td>'+timeStr+deltaInfo+'</td></tr>';
-	};
+	var checkpointLength = window.plugin.scoreCycleTimes.CHECKPOINT*1000;
+	var checkpointStart = Math.floor(now / checkpointLength) * checkpointLength;
+	var checkpointEnd = checkpointStart + checkpointLength;
 
 	var html = '<table>'
-		   + formatRow('Cycle s.', cycleStart)
-		   + formatRow('Prev CP', checkpointStart)
-		   + formatRow('Next CP', checkpointEnd)
-		   + formatRow('Cycle e.', cycleEnd)
-		   + '</table>';
+		+ plugin.scoreCycleTimes.formatRow(now, 'Cycle s.', cycleStart)
+		+ plugin.scoreCycleTimes.formatRow(now, 'Prev CP', checkpointStart)
+		+ plugin.scoreCycleTimes.formatRow(now, 'Next CP', checkpointEnd, 'next-cp')
+		+ plugin.scoreCycleTimes.formatRow(now, 'Cycle e.', cycleEnd)
+		+ '</table>'
+	;
 
 	$('#score_cycle_times_display').html(html);
+
+	$('#score_cycle_times_display .next-cp').click(function() {
+		plugin.scoreCycleTimes.showCheckpointsDialog(checkpointEnd, cycleStart, cycleEnd, checkpointLength);
+	});
+	$('#score_cycle_times_display .next-cp .val')
+		.append(' <span style="cursor:pointer" title="Show remaining checkpoints">[...]</span>')
+	;
 
 	var closestDeltaT = (checkpointEnd - now) / 1000 / 60;	// that should be closest
 	setTimeout ( window.plugin.scoreCycleTimes.update, updateInterval(closestDeltaT));
 };
 
+/**
+ * Show remaining checkpoints.
+ */
+window.plugin.scoreCycleTimes.showCheckpointsDialog = function (checkpointEnd, cycleStart, cycleEnd, checkpointLength) {
+	var now = new Date().getTime();
+	var html = '<table>';
+	for (var checkpoint = checkpointEnd; checkpoint < cycleEnd; checkpoint+=checkpointLength) {
+		var checkpointNumber = Math.floor((checkpoint-cycleStart)/checkpointLength);
+		html += plugin.scoreCycleTimes.formatRow(now, '#'+checkpointNumber, checkpoint);
+	}
+	html += '</table>';
 
+	dialog({
+		html: html,
+		dialogClass: 'ui-dialog-scoreCycleTimes',
+		title: 'Remaining checkpoints'
+	});
+};
 
 
 
