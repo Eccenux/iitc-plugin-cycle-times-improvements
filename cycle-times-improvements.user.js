@@ -27,6 +27,7 @@ window.plugin.scoreCycleTimes = function() {};
 
 window.plugin.scoreCycleTimes.CHECKPOINT = 5*60*60; //5 hours per checkpoint
 window.plugin.scoreCycleTimes.CYCLE = 7*25*60*60; //7 25 hour 'days' per cycle
+window.plugin.scoreCycleTimes.CHECKPOINTS_COUNT = window.plugin.scoreCycleTimes.CYCLE / window.plugin.scoreCycleTimes.CHECKPOINT;
 
 
 window.plugin.scoreCycleTimes.setup  = function() {
@@ -185,9 +186,10 @@ window.plugin.scoreCycleTimes.showCheckpointsBetweenDialog = function (start, en
  */
 window.plugin.scoreCycleTimes.showCheckpointsDialog = function (checkpointEnd, cycleStart, cycleEnd, checkpointLength) {
 	var now = new Date().getTime();
+	var maxCp = window.plugin.scoreCycleTimes.CHECKPOINTS_COUNT;
 	var html = '<table>';
-	for (var checkpoint = checkpointEnd; checkpoint < cycleEnd; checkpoint+=checkpointLength) {
-		var checkpointNumber = Math.floor((checkpoint-cycleStart)/checkpointLength);
+	for (var checkpoint = checkpointEnd; checkpoint <= cycleEnd; checkpoint+=checkpointLength) {
+		var checkpointNumber = Math.floor((checkpoint-cycleStart)/checkpointLength) % (maxCp + 1);
 		html += plugin.scoreCycleTimes.formatRow(now, '#'+checkpointNumber, checkpoint);
 	}
 	html += '</table>';
