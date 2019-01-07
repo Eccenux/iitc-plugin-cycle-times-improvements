@@ -184,13 +184,17 @@ window.plugin.scoreCycleTimes.showCheckpointsBetweenDialog = function (start, en
  * @param {Number} cycleEnd End time of the cycle to show. Might be replaced with final date to be shown.
  * @param {Number} checkpointLength [const] Checkpoint lenght in ms.
  */
-window.plugin.scoreCycleTimes.showCheckpointsDialog = function (checkpointEnd, cycleStart, cycleEnd, checkpointLength) {
+window.plugin.scoreCycleTimes.showCheckpointsDialog = function (checkpointTime, cycleStart, cycleEnd, checkpointLength) {
 	var now = new Date().getTime();
 	var maxCp = window.plugin.scoreCycleTimes.CHECKPOINTS_COUNT;
 	var html = '<table>';
-	for (var checkpoint = checkpointEnd; checkpoint <= cycleEnd; checkpoint+=checkpointLength) {
-		var checkpointNumber = Math.floor((checkpoint-cycleStart)/checkpointLength) % (maxCp + 1);
+	var checkpointNumber = Math.floor((checkpointTime-cycleStart)/checkpointLength);
+	for (var checkpoint = checkpointTime; checkpoint <= cycleEnd; checkpoint+=checkpointLength) {
 		html += plugin.scoreCycleTimes.formatRow(now, '#'+checkpointNumber, checkpoint);
+		checkpointNumber++;
+		if (checkpointNumber > maxCp) {
+			checkpointNumber -= maxCp;
+		}
 	}
 	html += '</table>';
 
