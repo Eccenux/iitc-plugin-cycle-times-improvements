@@ -137,7 +137,51 @@ window.plugin.scoreCycleTimes.update = function() {
 };
 
 /**
+ * Show checkpoints between dates.
+ * 
+ * Note! In Chrome `new Date("2019-01-08")` and `new Date("2019-01-08 00:00")` gives different dates!
+ * You should use the version with time to get expected results. E.g. this should work fine:
+ * plugin.scoreCycleTimes.showCheckpointsBetweenDialog(new Date("2019-01-08 00:00"), new Date("2019-01-10 00:00"));
+ * 
+ * Note! You might want to keep the interval lower then a week.
+ * 
+ * @param {Date} start Start time.
+ * @param {Date} end End time.
+ */
+window.plugin.scoreCycleTimes.showCheckpointsBetweenDialog = function (start, end) {
+	var startTime = start.getTime() - 1;
+	var cycleStart = Math.floor(startTime / (window.plugin.scoreCycleTimes.CYCLE*1000)) * (window.plugin.scoreCycleTimes.CYCLE*1000);
+	var boundaryTime = end.getTime() + 1;
+
+	var checkpointLength = window.plugin.scoreCycleTimes.CHECKPOINT*1000;
+	var checkpointStart = Math.floor(startTime / checkpointLength) * checkpointLength;	// checkpoint before given start time
+	var checkpointEnd = checkpointStart + checkpointLength;							// checkpoint after given start time
+	var checkpointTime = (checkpointStart < startTime) ? checkpointEnd : checkpointStart;
+
+	/*
+	function formatDt(dt){
+		return unixTimeToString(dt, true);
+	}
+	console.log({
+		'1 checkpointStart': formatDt(checkpointStart),
+		'2 startTime': formatDt(startTime),
+		'3 checkpointEnd': formatDt(checkpointEnd),
+		'4 boundaryTime': formatDt(boundaryTime),
+	});
+	*/
+	
+	plugin.scoreCycleTimes.showCheckpointsDialog(checkpointTime, cycleStart, boundaryTime, checkpointLength);
+}
+
+/**
  * Show remaining checkpoints.
+ * 
+ * All times passed as a timestamp in ms.
+ * 
+ * @param {Number} checkpointEnd Time of first checkpoint to be shown (should be the end time of current checkpoint).
+ * @param {Number} cycleStart Start time of the cycle to show.
+ * @param {Number} cycleEnd End time of the cycle to show. Might be replaced with final date to be shown.
+ * @param {Number} checkpointLength [const] Checkpoint lenght in ms.
  */
 window.plugin.scoreCycleTimes.showCheckpointsDialog = function (checkpointEnd, cycleStart, cycleEnd, checkpointLength) {
 	var now = new Date().getTime();
